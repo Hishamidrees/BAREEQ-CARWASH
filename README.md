@@ -1,133 +1,135 @@
-# BAREEQ – Smart IoT Car Wash Management System
+<div align="center">
 
-BAREEQ is an IoT-based smart car wash management system that connects ESP32-S3 wash stations, RFID users, MQTT communication, a cloud backend, a database, and a React dashboard into one complete platform.
+# ⚡ BAREEQ
 
-The system is designed to automate the car wash process, manage user wallet balances, collect real-time sensor readings, store wash history, and display analytics for revenue, consumption, and station performance.
+### Smart IoT Car Wash Management System
+
+*Connecting ESP32-S3 stations, RFID authentication, real-time sensors, and a cloud-backed React dashboard into one complete platform.*
+
+![Platform](https://img.shields.io/badge/Platform-ESP32--S3-blue?style=flat-square)
+![Protocol](https://img.shields.io/badge/Protocol-MQTT%20%2F%20TLS-green?style=flat-square)
+![Backend](https://img.shields.io/badge/Backend-Flask%20%2B%20Python-orange?style=flat-square)
+![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61dafb?style=flat-square)
+![Database](https://img.shields.io/badge/Database-MySQL%20%2F%20Cloud%20SQL-lightgrey?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+
+</div>
 
 ---
 
 ## Overview
 
-BAREEQ allows a user to scan an RFID card at a car wash station. The ESP32-S3 reads the RFID UID and sends a wallet request to the backend through MQTT. The backend checks the user balance, validates the selected service, and sends a response back to the station.
+BAREEQ automates the full car wash process — from the moment a user taps an RFID card to the final sensor summary stored in the cloud.
 
-If the user has enough balance, the ESP32-S3 starts the wash cycle. During the cycle, the station collects sensor readings such as water flow, air flow, TDS, turbidity, temperature, humidity, and water temperature. The data is sent to the backend and displayed on the React dashboard.
-
----
-
-## Main Features
-
-- RFID-based user authentication
-- ESP32-S3 car wash station controller
-- MQTT communication over TLS
-- Cloud backend
-- MySQL database storage
-- React frontend dashboard
-- User wallet balance system
-- Automatic balance deduction
-- Wash cycle tracking
-- Real-time sensor monitoring
-- Water flow measurement
-- Air flow measurement
-- TDS water quality monitoring
-- Turbidity water quality monitoring
-- Environmental temperature and humidity monitoring
-- Water temperature monitoring
-- Revenue and consumption analytics
-- User management
-- Service type management
-- Discount support
-- WebSocket live dashboard updates
-- Mission-based reporting
+The ESP32-S3 station reads the card UID, sends a wallet request over MQTT/TLS, and receives backend approval or rejection. If approved, the wash cycle starts automatically: the water pump runs, a short break follows, then the air pump runs for drying. Throughout the cycle, sensors collect water quality, flow, temperature, and humidity data — all stored in MySQL and streamed live to the React dashboard.
 
 ---
 
 ## System Architecture
 
-```text
+```
 RFID Card
-   |
-   v
+    │
+    ▼
 ESP32-S3 Car Wash Station
-   |
-   | MQTT over TLS
-   v
-Cloud Backend
-   |
-   | MySQL Database
-   v
-React Dashboard
+    │  SPI (RC522)
+    │
+    ▼
+MQTT Broker  ←──────────────────────────────────┐
+    │  MQTT over TLS                             │
+    ▼                                            │
+Cloud Backend (Flask · Cloud Run)  ──────────────┘
+    │  Cloud SQL Connector
+    ▼
+MySQL Database (Google Cloud SQL)
+    │  REST API · WebSocket
+    ▼
+React Dashboard (Vite)
 ```
 
 ---
 
-## How It Works
+## Features
 
-1. The user scans an RFID card.
-2. The ESP32-S3 reads the card UID.
-3. The ESP32-S3 sends a wallet request to the backend through MQTT.
-4. The backend checks the user balance and service price.
-5. The backend sends an approval or rejection response.
-6. If approved, the ESP32-S3 starts the wash mission.
-7. The water pump runs.
-8. The system takes a short break.
-9. The air pump runs.
-10. Sensor readings are collected during the mission.
-11. A mission summary is sent to the backend.
-12. The frontend dashboard updates with the latest data.
+- **RFID authentication** — RC522 reader, UID-based user lookup
+- **Wallet system** — balance check, automatic deduction, transaction history
+- **Wash cycle control** — water pump → break → air pump, relay-driven
+- **Real-time sensor monitoring** — flow, TDS, turbidity, temperature, humidity
+- **MQTT over TLS** — secure, bidirectional station-to-cloud messaging
+- **WebSocket dashboard** — live updates without polling
+- **Analytics** — revenue, consumption, wash history, sensor graphs
+- **Service management** — configurable wash types, pricing, discounts
+- **User management** — RFID UIDs, plate numbers, balances, visit counts
 
 ---
 
-## Hardware Used
+## Wash Cycle Flow
+
+```
+RFID Scan
+    │
+    ▼
+Wallet Validation (backend)
+    │
+    ├── Rejected ──► OLED shows error, cycle aborted
+    │
+    └── Approved ──► Wash begins
+            │
+            ▼
+        Water Pump ON  (30 seconds)
+            │
+            ▼
+        Break          (5 seconds)
+            │
+            ▼
+        Air Pump ON    (30 seconds)
+            │
+            ▼
+        ~65 sensor samples collected
+            │
+            ▼
+        Mission Summary → Backend → Dashboard
+```
+
+---
+
+## Hardware
 
 ### Controller
 
-| Hardware | Description |
-|---|---|
-| ESP32-S3 DevKitC | Main microcontroller used to control the car wash station |
-
-### RFID
-
-| Hardware | Description |
-|---|---|
-| RC522 RFID Reader | Reads RFID cards used to identify users |
+| Component | Description |
+|-----------|-------------|
+| ESP32-S3 DevKitC | Main microcontroller |
+| RC522 RFID Reader | Card authentication via SPI |
+| OLED Display | Status, balance, and mission info (I2C) |
 
 ### Sensors
 
-| Hardware | Description |
-|---|---|
-| YF-S201 Flow Sensor | Measures water flow |
-| YF-S201 Flow Sensor | Measures air flow |
-| TDS Analog Sensor | Measures total dissolved solids in water |
-| Turbidity Sensor | Measures water turbidity / clarity |
-| AHT20 Sensor | Measures environmental temperature and humidity |
-| BMP280 Sensor | Measures pressure and environmental data |
-| MAX6675 Module | Thermocouple amplifier module |
-| K-Type Thermocouple | Measures water temperature |
-
-### Display
-
-| Hardware | Description |
-|---|---|
-| OLED Display | Displays status messages, RFID status, balance, and mission updates |
+| Sensor | Measurement | Interface |
+|--------|-------------|-----------|
+| YF-S201 (×2) | Water flow & air flow | Digital (GPIO) |
+| TDS Analog Sensor | Total dissolved solids | Analog (ADC) |
+| Turbidity Sensor | Water clarity (NTU) | Analog (ADC) |
+| AHT20 | Env. temperature & humidity | I2C |
+| BMP280 | Atmospheric pressure | I2C |
+| MAX6675 + K-Type Thermocouple | Water temperature | SPI |
 
 ### Actuators
 
-| Hardware | Description |
-|---|---|
-| Relay Module | Controls pumps |
-| Water Pump | Runs during the washing stage |
-| Air Pump | Runs during the drying stage |
+| Component | Purpose |
+|-----------|---------|
+| Relay Module | Switches pumps on/off |
+| Water Pump | Washing stage |
+| Air Pump | Drying stage |
 
 ---
 
-## ESP32-S3 Pin Configuration
-
-> Note: This pinout is based on the BAREEQ ESP32-S3 station configuration.
+## Pin Configuration
 
 ### RC522 RFID Reader
 
-| RC522 Pin | ESP32-S3 Pin |
-|---|---|
+| RC522 | ESP32-S3 |
+|-------|----------|
 | SCK | GPIO 12 |
 | MISO | GPIO 13 |
 | MOSI | GPIO 11 |
@@ -136,130 +138,49 @@ React Dashboard
 | 3.3V | 3.3V |
 | GND | GND |
 
-### I2C Bus
+### I2C Bus (OLED, AHT20, BMP280)
 
-Used for OLED display, AHT20, and BMP280.
-
-| Signal | ESP32-S3 Pin |
-|---|---|
+| Signal | ESP32-S3 |
+|--------|----------|
 | SDA | GPIO 8 |
 | SCL | GPIO 9 |
-| VCC | 3.3V |
-| GND | GND |
 
-### Flow Sensors
+### Flow & Analog Sensors
 
-| Sensor | ESP32-S3 Pin |
-|---|---|
-| Air Flow Sensor | GPIO 4 |
-| Water Flow Sensor | GPIO 5 |
-
-### Analog Sensors
-
-| Sensor | ESP32-S3 Pin |
-|---|---|
+| Sensor | ESP32-S3 |
+|--------|----------|
+| Air Flow Sensor (YF-S201) | GPIO 4 |
+| Water Flow Sensor (YF-S201) | GPIO 5 |
 | TDS Sensor | GPIO 1 |
 | Turbidity Sensor | GPIO 3 |
 
 ### MAX6675 Thermocouple Module
 
-| MAX6675 Pin | ESP32-S3 Pin |
-|---|---|
+| MAX6675 | ESP32-S3 |
+|---------|----------|
 | CS | GPIO 2 |
 | SCK | GPIO 36 |
 | SO / MISO | GPIO 37 |
-| VCC | 3.3V / 5V depending on module |
-| GND | GND |
 
 ### Relay Outputs
 
-| Relay | ESP32-S3 Pin |
-|---|---|
-| Water Pump Relay | GPIO 17 |
-| Air Pump Relay | GPIO 45 |
+| Relay | ESP32-S3 |
+|-------|----------|
+| Water Pump | GPIO 17 |
+| Air Pump | GPIO 45 |
 
 ---
 
-## Wash Mission Cycle
+## MQTT Topics
 
-The wash mission follows this sequence:
+| Direction | Topic | Description |
+|-----------|-------|-------------|
+| ESP32 → Backend | `carwash/<stationId>/wallet/request` | Sent on RFID scan |
+| Backend → ESP32 | `carwash/<stationId>/wallet/response` | Approve / reject |
+| ESP32 → Backend | `carwash/<stationId>/sensors/all` | Live sensor readings |
+| ESP32 → Backend | `carwash/<stationId>/mission/summary` | Final cycle summary |
 
-```text
-RFID Scan
-   |
-Wallet Validation
-   |
-Water Pump ON - 30 seconds
-   |
-Break - 5 seconds
-   |
-Air Pump ON - 30 seconds
-   |
-Mission Summary Sent
-```
-
-The station collects approximately 65 samples during each mission.
-
----
-
-## Data Collected
-
-The ESP32-S3 collects and sends the following data:
-
-| Field | Description | Unit |
-|---|---|---|
-| uid | RFID card UID | Text |
-| station_id | Station identifier | Text |
-| device_id | ESP32 device identifier | Text |
-| total_water_l | Total water used | Liters |
-| total_air_l | Total air used | Liters |
-| avg_tds_ppm | Average TDS value | ppm |
-| avg_turbidity_ntu | Average turbidity value | NTU |
-| avg_env_temperature_c | Average environment temperature | °C |
-| avg_env_humidity_pct | Average humidity | % |
-| avg_water_temperature_c | Average water temperature | °C |
-
----
-
-## MQTT Communication
-
-BAREEQ uses MQTT over TLS to communicate between the ESP32-S3 station and the backend.
-
-### Wallet Request Topic
-
-```text
-carwash/<stationId>/wallet/request
-```
-
-Used when the user scans an RFID card.
-
-### Wallet Response Topic
-
-```text
-carwash/<stationId>/wallet/response
-```
-
-Used by the backend to approve or reject a wash request.
-
-### Sensor Data Topic
-
-```text
-carwash/<stationId>/sensors/all
-```
-
-Used to send live sensor readings.
-
-### Mission Summary Topic
-
-```text
-carwash/<stationId>/mission/summary
-```
-
-Used to send the final mission data after a wash cycle is completed.
-
----
-
-## Example Wallet Request Payload
+### Wallet Request Payload
 
 ```json
 {
@@ -269,7 +190,7 @@ Used to send the final mission data after a wash cycle is completed.
 }
 ```
 
-## Example Wallet Response Payload
+### Wallet Response Payload
 
 ```json
 {
@@ -282,90 +203,49 @@ Used to send the final mission data after a wash cycle is completed.
 }
 ```
 
-## Example Mission Summary Payload
+### Mission Summary Payload
 
 ```json
 {
   "station_id": "station-01",
   "device_id": "esp32s3-01",
   "uid": "A4130307",
-  "total_air_l": 120.5,
   "total_water_l": 18.3,
+  "total_air_l": 120.5,
+  "avg_tds_ppm": 310.4,
+  "avg_turbidity_ntu": 180.7,
   "avg_env_temperature_c": 27.6,
   "avg_env_humidity_pct": 48.2,
-  "avg_water_temperature_c": 25.1,
-  "avg_tds_ppm": 310.4,
-  "avg_turbidity_ntu": 180.7
+  "avg_water_temperature_c": 25.1
 }
 ```
 
----
-
-## RFID UID Format
-
-The RFID reader may display the UID with spaces:
-
-```text
-A4 13 03 07
-```
-
-The backend stores and matches the UID without spaces:
-
-```text
-A4130307
-```
-
-This makes matching easier between the ESP32, backend, and database.
+> **RFID UID format:** The RC522 may output `A4 13 03 07` (with spaces). The backend stores and matches UIDs without spaces: `A4130307`.
 
 ---
 
-## Backend
+## Tech Stack
 
-The backend handles communication between the ESP32 stations, MQTT broker, database, and frontend dashboard.
+### Backend
 
-### Backend Technologies
-
-| Technology | Purpose |
-|---|---|
-| Python | Backend programming language |
-| Flask | REST API backend |
+| Technology | Role |
+|------------|------|
+| Python | Backend language |
+| Flask | REST API |
 | Flask-Sock | WebSocket support |
 | Paho MQTT | MQTT client |
-| MySQL | Database |
-| Google Cloud SQL | Cloud database |
+| MySQL | Relational database |
+| Google Cloud SQL | Managed database hosting |
 | Google Cloud Run | Backend hosting |
-| Cloud SQL Python Connector | Secure MySQL connection |
+| Cloud SQL Python Connector | Secure DB connection |
 
-### Backend Responsibilities
+### Frontend
 
-- Receive MQTT messages from ESP32 stations
-- Process RFID wallet requests
-- Validate users
-- Check user balances
-- Deduct service cost
-- Store sensor data
-- Store mission summaries
-- Store user transactions
-- Manage stations
-- Manage services
-- Send live updates to the frontend
-- Provide REST API endpoints
-- Handle WebSocket dashboard updates
-
----
-
-## Frontend
-
-The frontend is a React dashboard used to monitor and manage the car wash system.
-
-### Frontend Technologies
-
-| Technology | Purpose |
-|---|---|
-| React | Frontend framework |
+| Technology | Role |
+|------------|------|
+| React | UI framework |
 | Vite | Build tool |
-| JavaScript / JSX | Frontend logic |
-| CSS | Styling |
+| JavaScript / JSX | Application logic |
 | REST API | Backend communication |
 | WebSocket | Real-time updates |
 
@@ -373,85 +253,92 @@ The frontend is a React dashboard used to monitor and manage the car wash system
 
 ## Dashboard Pages
 
-### Dashboard
-
-Shows the main system overview, station status, latest sensor readings, and live updates.
-
-### Users
-
-Used to manage users, RFID cards, plate numbers, balances, visit count, and account status.
-
-### Analytics
-
-Displays graphs and readings for:
-
-- TDS
-- Turbidity
-- Water consumption
-- Air consumption
-- Temperature
-- Humidity
-- Wash cycle history
-
-### Revenue & Consumption
-
-Displays business and usage information such as:
-
-- Total credit
-- User balances
-- Monthly revenue
-- Transactions
-- Water consumption
-- Air consumption
-
-### Last Report
-
-Displays the latest wash report for a selected user or UID.
-
-### Service Type
-
-Used to configure available wash services, pricing, and discounts.
+| Page | Description |
+|------|-------------|
+| **Dashboard** | System overview, station status, live sensor readings |
+| **Users** | Manage RFID cards, plate numbers, balances, visit counts |
+| **Analytics** | TDS, turbidity, flow, temperature, humidity, cycle history |
+| **Revenue & Consumption** | Monthly revenue, transactions, water/air usage |
+| **Last Report** | Latest wash report for a selected user or UID |
+| **Service Types** | Configure services, pricing, and discounts |
 
 ---
 
-## Database Concept
+## Repository Structure
 
-The database stores system data such as:
-
-- Users
-- RFID UIDs
-- Plate numbers
-- Balances
-- Wash visits
-- Sensor readings
-- Mission summaries
-- Transactions
-- Stations
-- Services
-- Discounts
+```
+BAREEQ/
+├── backend/
+│   ├── app.py
+│   ├── requirements.txt
+│   └── ...
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── ...
+├── esp32/
+│   ├── bareeq_station.ino
+│   └── ...
+└── README.md
+```
 
 ---
 
-## Example User Record
+## Setup
 
-```json
-{
-  "name": "User Name",
-  "uid": "A4130307",
-  "plate_digits": "1234",
-  "plate_letters": "ABC",
-  "balance": 100,
-  "status": "active"
-}
+### Backend
+
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### ESP32 Firmware
+
+Install these Arduino libraries before flashing:
+
+- `WiFi` · `SPI` · `Wire`
+- `MFRC522`
+- `PubSubClient`
+- `WiFiClientSecure`
+- `ArduinoJson`
+- `U8g2`
+- `Adafruit AHTX0`
+- `Adafruit BMP280`
+- `MAX6675 library`
+
+Then configure your credentials in the sketch:
+
+```cpp
+#define STATION_ID "station-01"
+#define DEVICE_ID  "esp32s3-01"
+
+const char* WIFI_SSID = "your_wifi_name";
+const char* WIFI_PASS = "your_wifi_password";
+
+const char* MQTT_HOST = "your_mqtt_host";
+const int   MQTT_PORT = 8883;
+const char* MQTT_USER = "your_mqtt_username";
+const char* MQTT_PASS = "your_mqtt_password";
 ```
 
 ---
 
 ## Environment Variables
 
-The backend uses environment variables for private configuration.
-
-Example:
+Create a `.env` file in the `backend/` directory:
 
 ```env
 MYSQL_HOST=your_mysql_host
@@ -467,146 +354,44 @@ MQTT_PASSWORD=your_mqtt_password
 CORS_ORIGIN=your_frontend_url
 ```
 
-Do not commit real `.env` files or credentials to GitHub.
+> ⚠️ Never commit `.env` files or credentials to version control.
 
 ---
 
-## Local Backend Setup
+## Security
 
-```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-
-For Linux or macOS:
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python app.py
-```
+- MQTT communication encrypted over TLS (port 8883)
+- All credentials stored in environment variables
+- RFID user validation performed server-side only
+- Balance deduction happens on the backend — never trusted from the device
+- CORS restricted to allowed frontend origins
+- Secure Cloud SQL connector for database access
 
 ---
 
-## Local Frontend Setup
+## Roadmap
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+- [ ] Admin login system
+- [ ] Multi-station monitoring view
+- [ ] QR payment support
+- [ ] Mobile application
+- [ ] Predictive maintenance alerts
+- [ ] Automatic PDF / Excel report export
+- [ ] AI-based sensor anomaly detection
+- [ ] Real-time fault alerts per station
+- [ ] Advanced revenue analytics
+- [ ] Service recommendation engine
 
----
-
-## ESP32 Setup
-
-The ESP32 firmware requires the following Arduino libraries:
-
-- WiFi
-- SPI
-- Wire
-- MFRC522
-- PubSubClient
-- WiFiClientSecure
-- ArduinoJson
-- U8g2
-- Adafruit AHTX0
-- Adafruit BMP280
-- MAX6675 library
-
----
-
-## ESP32 Configuration Example
-
-```cpp
-#define STATION_ID "station-01"
-#define DEVICE_ID  "esp32s3-01"
-
-const char* WIFI_SSID = "your_wifi_name";
-const char* WIFI_PASS = "your_wifi_password";
-
-const char* MQTT_HOST = "your_mqtt_host";
-const int MQTT_PORT = 8883;
-const char* MQTT_USER = "your_mqtt_username";
-const char* MQTT_PASS = "your_mqtt_password";
-```
-
----
-
-## Repository Structure
-
-```text
-BAREEQ/
-│
-├── backend/
-│   ├── app.py
-│   ├── requirements.txt
-│   └── ...
-│
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── ...
-│
-├── esp32/
-│   ├── bareeq_station.ino
-│   └── ...
-│
-└── README.md
-```
-
----
-
-## Security Notes
-
-- Use MQTT over TLS.
-- Store credentials in environment variables.
-- Do not commit `.env` files.
-- Validate RFID users in the backend.
-- Deduct balances on the server side.
-- Restrict frontend origins using CORS.
-- Use secure database connections.
-- Keep cloud credentials private.
-
----
-
-## Future Improvements
-
-- Admin login system
-- Multi-station monitoring
-- QR payment support
-- Mobile application
-- Predictive maintenance
-- Advanced revenue analytics
-- Automatic report export to PDF or Excel
-- AI-based anomaly detection
-- More detailed station health monitoring
-- Real-time alerts for sensor faults
-- Service recommendation based on usage
-
----
-
-## Project Purpose
-
-BAREEQ was developed to demonstrate how IoT, cloud computing, real-time dashboards, and automation can be used to improve car wash operations.
-
-The project connects physical hardware with a cloud backend and a modern web dashboard, creating a complete smart car wash management system.
-
----
-
-## Author
-
-Developed by 
-Hisham Ideas 
-Hadi AlMansour
 ---
 
 ## License
 
-This project can be released under the MIT License or any license preferred by the author.
+This project is released under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+Developed by **Hisham Ideas** · **Hadi AlMansour**
+
+</div>
