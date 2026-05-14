@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Node
+node_modules/
+dist/
+
+# Arduino secrets
+esp32/bareeq_station/secrets.h
+
+# Misc
+*.csv
+.DS_Store

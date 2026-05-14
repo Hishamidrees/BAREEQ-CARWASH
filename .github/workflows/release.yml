@@ -1,0 +1,43 @@
+name: Release Firmware Binary
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Arduino CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install ESP32-S3 board core
+        run: |
+          arduino-cli core update-index --config-file .arduino-cli.yaml
+          arduino-cli core install esp32:esp32
+
+      - name: Install libraries
+        run: |
+          arduino-cli lib install "MFRC522" "PubSubClient" "ArduinoJson" \
+            "U8g2" "Adafruit AHTX0 library" "Adafruit BMP280 Library" "MAX6675 library"
+
+      - name: Create secrets.h from example
+        run: cp esp32/bareeq_station/secrets.h.example esp32/bareeq_station/secrets.h
+
+      - name: Compile and export firmware
+        run: |
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32s3 \
+            --export-binaries \
+            esp32/bareeq_station/bareeq_station.ino
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: esp32/bareeq_station/build/**/*.bin
+          generate_release_notes: true

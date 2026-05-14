@@ -1,0 +1,11 @@
+Flask==3.0.3
+flask-sock==0.7.0
+paho-mqtt==2.1.0
+certifi==2025.8.3
+python-dotenv==1.0.1
+gunicorn==22.0.0
+pymysql==1.1.1
+cloud-sql-python-connector[pymysql]==1.18.5
+simple-websocket==1.1.0
+cryptography==45.0.7
+flask-cors==5.0.0
