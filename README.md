@@ -27,27 +27,7 @@ The ESP32-S3 station reads the card UID, sends a wallet request over MQTT/TLS, a
 
 ## System Architecture
 
-```
-RFID Card
-    │
-    ▼
-ESP32-S3 Car Wash Station
-    │  SPI (RC522)
-    │
-    ▼
-MQTT Broker  ←──────────────────────────────────┐
-    │  MQTT over TLS                             │
-    ▼                                            │
-Cloud Backend (Flask · Cloud Run)  ──────────────┘
-    │  Cloud SQL Connector
-    ▼
-MySQL Database (Google Cloud SQL)
-    │  REST API · WebSocket
-    ▼
-React Dashboard (Vite)
-```
-
----
+![System Architecture](docs/SAD.png)
 
 ## Features
 
