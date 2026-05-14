@@ -602,8 +602,9 @@ The project connects physical hardware with a cloud backend and a modern web das
 
 ## Author
 
-Developed by Hadi Almansour.
-
+Developed by 
+Hisham Ideas 
+Hadi AlMansour
 ---
 
 ## License
